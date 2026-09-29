@@ -17,15 +17,7 @@
 
 ---
 
-## 🌐 Live Production Deployments
 
-| Component | Production URL | Status / Description |
-| :--- | :--- | :--- |
-| **Investigator Web App** | [https://ledger-sigma-gules.vercel.app](https://ledger-sigma-gules.vercel.app) | Enterprise dashboard, case triage, graph canvas & Maker-Checker queue |
-| **Core Banking Simulator** | [https://ledger-sigma-gules.vercel.app/bank](https://ledger-sigma-gules.vercel.app/bank) | Live financial rail simulator (UPI/IMPS/NEFT) injecting real transactions |
-| **Investigation Core API** | [https://smarthorizon.onrender.com](https://smarthorizon.onrender.com) | FastAPI multi-agent engine, graph analytics & real-time scoring |
-| **Interactive API Docs** | [https://smarthorizon.onrender.com/docs](https://smarthorizon.onrender.com/docs) | OpenAPI / Swagger specification with live interactive testing |
-| **System Health Check** | [https://smarthorizon.onrender.com/health](https://smarthorizon.onrender.com/health) | Live service liveness and component readiness check |
 
 ---
 
