@@ -1,0 +1,60 @@
+{
+  "model_file": "fraud_model.pkl",
+  "feature_columns": [
+    "step",
+    "amount",
+    "isFlaggedFraud",
+    "hour",
+    "is_night",
+    "orig_txn_count",
+    "dest_txn_count",
+    "orig_counterparty_degree",
+    "dest_counterparty_degree",
+    "type_CASH_IN",
+    "type_CASH_OUT",
+    "type_DEBIT",
+    "type_PAYMENT",
+    "type_TRANSFER"
+  ],
+  "target_column": "isFraud",
+  "threshold": 0.50,
+  "metrics": {
+    "roc_auc": 0.9694,
+    "f1_score": 0.7782,
+    "total_training_samples": 128001
+  },
+  "risk_bands": {
+    "LOW": [
+      0.0,
+      0.20
+    ],
+    "MEDIUM": [
+      0.20,
+      0.50
+    ],
+    "HIGH": [
+      0.50,
+      0.80
+    ],
+    "CRITICAL": [
+      0.80,
+      1.0
+    ]
+  },
+  "feature_descriptions": {
+    "step": "Simulation/time step (hours elapsed)",
+    "amount": "Transaction amount in INR",
+    "isFlaggedFraud": "Rule-based high-value flag (>200,000 INR illegal transfer attempt)",
+    "hour": "Hour of the day (step mod 24)",
+    "is_night": "Night-time transaction window (10 PM to 5 AM)",
+    "orig_txn_count": "Historical transaction velocity of the sender account",
+    "dest_txn_count": "Historical transaction velocity of the recipient account",
+    "orig_counterparty_degree": "Number of unique counterparties connected to sender",
+    "dest_counterparty_degree": "Number of unique counterparties connected to recipient",
+    "type_CASH_IN": "CASH_IN deposit transaction rail",
+    "type_CASH_OUT": "CASH_OUT withdrawal transaction rail",
+    "type_DEBIT": "DEBIT transaction rail",
+    "type_PAYMENT": "PAYMENT merchant purchase transaction rail",
+    "type_TRANSFER": "TRANSFER peer-to-peer transaction rail"
+  }
+}

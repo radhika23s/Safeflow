@@ -1,0 +1,43 @@
+# =============================================================================
+# Safe Flow — .gitattributes
+# Normalise line endings so the repo is consistent across Windows / Mac / Linux
+# =============================================================================
+
+# Default: normalise all text files to LF in the repo
+* text=auto eol=lf
+
+# Explicitly text files
+*.py        text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.jsx       text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.toml      text eol=lf
+*.env       text eol=lf
+*.example   text eol=lf
+*.gitignore text eol=lf
+
+# Binary files — no line-ending conversion
+*.pkl       binary
+*.joblib    binary
+*.h5        binary
+*.bin       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.eot       binary
+
+# CSV — treat as text (line endings normalised) but diff as binary for large files
+*.csv       text eol=lf

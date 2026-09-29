@@ -1,0 +1,133 @@
+{
+  "thresholds_version": "v1",
+  "description": "Risk level thresholds and model configuration",
+  "created_date": "2026-08-12",
+  
+  "risk_levels": {
+    "LOW": {
+      "min_score": 0,
+      "max_score": 30,
+      "description": "Routine transaction, very low fraud risk",
+      "action": "ACCEPT",
+      "review_priority": 0
+    },
+    "MEDIUM": {
+      "min_score": 31,
+      "max_score": 60,
+      "description": "Some indicators of risk present, may warrant monitoring",
+      "action": "MONITOR",
+      "review_priority": 1
+    },
+    "HIGH": {
+      "min_score": 61,
+      "max_score": 80,
+      "description": "Multiple fraud indicators present, recommend human review",
+      "action": "REVIEW",
+      "review_priority": 2
+    },
+    "CRITICAL": {
+      "min_score": 81,
+      "max_score": 100,
+      "description": "Strong fraud signals, urgent investigation needed",
+      "action": "ESCALATE",
+      "review_priority": 3
+    }
+  },
+  
+  "ensemble_weights": {
+    "description": "Weights for combining multiple model outputs into risk_score",
+    "xgboost_supervised": 0.60,
+    "isolation_forest_anomaly": 0.20,
+    "contextual_rules": 0.20,
+    "formula": "risk_score = (0.60 * xgb_prob + 0.20 * if_anomaly + 0.20 * context) * 100"
+  },
+  
+  "model_thresholds": {
+    "xgboost": {
+      "fraud_probability_threshold": 0.5,
+      "description": "XGBoost fraud probability above this triggers consideration",
+      "tunable": true
+    },
+    "isolation_forest": {
+      "anomaly_score_threshold": 0.6,
+      "description": "Isolation Forest anomaly score above this is flagged",
+      "tunable": true
+    }
+  },
+  
+  "velocity_thresholds": {
+    "txn_count_1h_high": 5,
+    "txn_count_1h_very_high": 10,
+    "amount_sum_1h_percentile": 95,
+    "unique_destinations_24h_high": 10,
+    "unique_senders_to_dest_1h_high": 5
+  },
+  
+  "account_thresholds": {
+    "new_account_age_days": 30,
+    "dormant_gap_days": 180,
+    "amount_zscore_high": 3.0,
+    "amount_zscore_very_high": 4.0
+  },
+  
+  "contextual_rules": {
+    "description": "Rules that contribute to contextual_score",
+    "rules": [
+      {
+        "name": "circular_transaction",
+        "impact": 0.30,
+        "condition": "cycle_detected == 1"
+      },
+      {
+        "name": "fan_in_concentration",
+        "impact": 0.20,
+        "condition": "fan_in_score > velocity_thresholds.unique_senders_to_dest_1h_high"
+      },
+      {
+        "name": "fan_out_dispersion",
+        "impact": 0.20,
+        "condition": "fan_out_score > velocity_thresholds.unique_destinations_24h_high"
+      },
+      {
+        "name": "high_velocity",
+        "impact": 0.15,
+        "condition": "txn_count_1h > velocity_thresholds.txn_count_1h_high"
+      },
+      {
+        "name": "large_amount_sum",
+        "impact": 0.15,
+        "condition": "amount_sum_1h > amount_sum_1h_percentile"
+      },
+      {
+        "name": "new_account_large_amount",
+        "impact": 0.20,
+        "condition": "is_new_account == 1 AND amount > historical_avg * 2"
+      },
+      {
+        "name": "new_beneficiary_high_amount",
+        "impact": 0.15,
+        "condition": "new_beneficiary_flag == 1 AND amount > historical_avg * 1.5"
+      },
+      {
+        "name": "dormant_reactivation",
+        "impact": 0.15,
+        "condition": "account_age_steps > dormant_gap_days AND amount > historical_avg"
+      }
+    ]
+  },
+  
+  "precision_recall_thresholds": {
+    "description": "Alternative thresholds for precision/recall tradeoff",
+    "optimize_for_precision": 0.7,
+    "optimize_for_recall": 0.3,
+    "balanced_f1": 0.5
+  },
+  
+  "review_capacity": {
+    "analysts_available": 10,
+    "avg_review_time_minutes": 30,
+    "cases_per_analyst_per_day": 16,
+    "total_daily_review_capacity": 160,
+    "description": "Adjust thresholds based on available analyst capacity"
+  }
+}

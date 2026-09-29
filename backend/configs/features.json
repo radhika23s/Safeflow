@@ -1,0 +1,224 @@
+{
+  "feature_version": "v1",
+  "description": "Feature configuration for fraud detection model",
+  "created_date": "2026-08-12",
+  
+  "feature_groups": {
+    "transaction_level": {
+      "description": "Basic transaction features",
+      "features": [
+        {
+          "name": "amount",
+          "type": "float",
+          "description": "Transaction amount",
+          "source": "raw.amount"
+        },
+        {
+          "name": "log_amount",
+          "type": "float",
+          "description": "Log-transformed amount",
+          "formula": "log(amount + 1)",
+          "leakage_safe": true
+        },
+        {
+          "name": "is_cash_out",
+          "type": "int",
+          "description": "1 if transaction type is CASH_OUT",
+          "source": "raw.type",
+          "leakage_safe": true
+        },
+        {
+          "name": "is_transfer",
+          "type": "int",
+          "description": "1 if transaction type is TRANSFER",
+          "source": "raw.type",
+          "leakage_safe": true
+        },
+        {
+          "name": "balance_usage_ratio",
+          "type": "float",
+          "description": "Ratio of amount used from available balance",
+          "formula": "(oldbalanceOrig - newbalanceOrig) / (oldbalanceOrig + 1)",
+          "leakage_safe": true
+        }
+      ]
+    },
+    
+    "velocity_features": {
+      "description": "Temporal velocity and frequency features (historical only)",
+      "features": [
+        {
+          "name": "txn_count_1h",
+          "type": "int",
+          "description": "Transaction count by sender in last 1 hour (BEFORE current)",
+          "window": "1h",
+          "leakage_safe": true
+        },
+        {
+          "name": "txn_count_24h",
+          "type": "int",
+          "description": "Transaction count by sender in last 24 hours (BEFORE current)",
+          "window": "24h",
+          "leakage_safe": true
+        },
+        {
+          "name": "amount_sum_1h",
+          "type": "float",
+          "description": "Sum of amounts by sender in last 1 hour (BEFORE current)",
+          "window": "1h",
+          "leakage_safe": true
+        },
+        {
+          "name": "amount_sum_24h",
+          "type": "float",
+          "description": "Sum of amounts by sender in last 24 hours (BEFORE current)",
+          "window": "24h",
+          "leakage_safe": true
+        },
+        {
+          "name": "unique_destinations_1h",
+          "type": "int",
+          "description": "Unique destination accounts by sender in last 1 hour",
+          "window": "1h",
+          "leakage_safe": true
+        },
+        {
+          "name": "unique_destinations_24h",
+          "type": "int",
+          "description": "Unique destination accounts by sender in last 24 hours",
+          "window": "24h",
+          "leakage_safe": true
+        }
+      ]
+    },
+    
+    "account_behavior": {
+      "description": "Account-level behavioral features",
+      "features": [
+        {
+          "name": "account_age_steps",
+          "type": "int",
+          "description": "Steps since first activity for this account",
+          "formula": "current_step - first_activity_step",
+          "leakage_safe": true
+        },
+        {
+          "name": "is_new_account",
+          "type": "int",
+          "description": "1 if account age < 30 days",
+          "leakage_safe": true
+        },
+        {
+          "name": "historical_avg_amount",
+          "type": "float",
+          "description": "Average amount for this sender (BEFORE current transaction)",
+          "leakage_safe": true
+        },
+        {
+          "name": "historical_std_amount",
+          "type": "float",
+          "description": "Std dev of amounts for this sender (BEFORE current)",
+          "leakage_safe": true
+        },
+        {
+          "name": "amount_zscore",
+          "type": "float",
+          "description": "Z-score of amount vs historical for this sender",
+          "formula": "(amount - historical_avg) / (historical_std + 1)",
+          "leakage_safe": true
+        }
+      ]
+    },
+    
+    "beneficiary_features": {
+      "description": "Destination/beneficiary features",
+      "features": [
+        {
+          "name": "new_beneficiary_flag",
+          "type": "int",
+          "description": "1 if first time this sender sends to this recipient",
+          "leakage_safe": true
+        },
+        {
+          "name": "beneficiary_receive_frequency",
+          "type": "float",
+          "description": "How many times has this destination received from this sender",
+          "leakage_safe": true
+        }
+      ]
+    },
+    
+    "graph_features": {
+      "description": "Graph/network-based features from synthetic data patterns",
+      "features": [
+        {
+          "name": "cycle_detected",
+          "type": "int",
+          "description": "1 if transaction is part of circular flow pattern",
+          "source": "scenario features",
+          "leakage_safe": true
+        },
+        {
+          "name": "cycle_length",
+          "type": "int",
+          "description": "Length of cycle if detected",
+          "leakage_safe": true
+        },
+        {
+          "name": "fan_in_score",
+          "type": "float",
+          "description": "Number of unique senders to this destination in time window",
+          "leakage_safe": true
+        },
+        {
+          "name": "fan_out_score",
+          "type": "float",
+          "description": "Number of unique destinations from this sender in time window",
+          "leakage_safe": true
+        },
+        {
+          "name": "destination_concentration",
+          "type": "float",
+          "description": "Concentration of transactions to single destination (0-1)",
+          "leakage_safe": true
+        }
+      ]
+    },
+    
+    "scenario_metadata": {
+      "description": "Metadata from synthetic labeled data (training only)",
+      "features": [
+        {
+          "name": "scenario_type",
+          "type": "str",
+          "description": "Type of scenario (fraud pattern) - for understanding",
+          "leakage_safe": true
+        },
+        {
+          "name": "severity",
+          "type": "str",
+          "description": "Severity level assigned by synthetic data generator",
+          "leakage_safe": true
+        }
+      ]
+    }
+  },
+  
+  "excluded_features": {
+    "description": "Features NOT included (leakage/invalid)",
+    "features": [
+      "future_transaction_info",
+      "post_investigation_label",
+      "analyst_decision",
+      "total_future_transactions",
+      "future_balance_change"
+    ]
+  },
+  
+  "training_notes": {
+    "class_imbalance": "Expected to be extreme in real paysim dataset; synthetic data is 50-50 for validation",
+    "scaling": "XGBoost/RF don't require scaling; Isolation Forest may benefit from standardization",
+    "missing_values": "Filled with domain-appropriate defaults per column",
+    "categorical_encoding": "High-cardinality fields (account IDs) not one-hot encoded; instead converted to behavioral features"
+  }
+}

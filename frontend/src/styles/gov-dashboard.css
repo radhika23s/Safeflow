@@ -1,0 +1,95 @@
+.gov-dashboard {
+  --dashboard-white: #f0f6fc;
+  --dashboard-muted: #8b949e;
+  --dashboard-bg: #0d1117;
+  --dashboard-surface: #161b22;
+  --dashboard-soft: #21262d;
+  --dashboard-border: #30363d;
+  --dashboard-accent: #f0f6fc;
+  --dashboard-risk: #f0f6fc;
+  --dashboard-chart: #f0f6fc;
+  background: var(--dashboard-bg);
+  color: var(--dashboard-white);
+}
+
+.gov-dashboard .bg-card,
+.gov-dashboard .bg-background { background-color: var(--dashboard-surface); }
+.gov-dashboard .bg-muted,
+.gov-dashboard .bg-muted\/30,
+.gov-dashboard .bg-muted\/40,
+.gov-dashboard .bg-muted\/50 { background-color: var(--dashboard-soft); }
+.gov-dashboard .border-border,
+.gov-dashboard .border,
+.gov-dashboard .border-b,
+.gov-dashboard .border-t,
+.gov-dashboard .border-l,
+.gov-dashboard .border-r { border-color: var(--dashboard-border); }
+.gov-dashboard .text-foreground { color: var(--dashboard-white); }
+.gov-dashboard .text-muted-foreground { color: var(--dashboard-muted); }
+
+/* Dashboard uses one clean white accent instead of multiple accent colors. */
+.gov-dashboard .text-primary,
+.gov-dashboard .text-violet,
+.gov-dashboard .text-teal,
+.gov-dashboard .text-risk-low,
+.gov-dashboard .text-risk-medium,
+.gov-dashboard .text-risk-high,
+.gov-dashboard .text-risk-critical { color: var(--dashboard-accent) !important; }
+
+.gov-dashboard .bg-primary,
+.gov-dashboard .bg-violet,
+.gov-dashboard .bg-teal,
+.gov-dashboard .bg-risk-low\/10,
+.gov-dashboard .bg-risk-medium\/10,
+.gov-dashboard .bg-risk-high\/10,
+.gov-dashboard .bg-risk-critical\/10 { background-color: var(--dashboard-soft) !important; color: var(--dashboard-white); }
+
+.gov-dashboard .ring-violet,
+.gov-dashboard .ring-primary { --tw-ring-color: var(--dashboard-white); }
+.gov-dashboard .border-violet,
+.gov-dashboard .border-teal,
+.gov-dashboard .border-primary { border-color: var(--dashboard-white) !important; }
+
+.gov-dashboard .rounded-4xl,
+.gov-dashboard .rounded-3xl,
+.gov-dashboard .rounded-2xl,
+.gov-dashboard .rounded-xl,
+.gov-dashboard .rounded-lg,
+.gov-dashboard .rounded-md,
+.gov-dashboard .rounded-sm { border-radius: 6px; }
+
+.gov-dashboard .shadow-xs,
+.gov-dashboard .shadow-2xs,
+.gov-dashboard .shadow-sm,
+.gov-dashboard .shadow-md,
+.gov-dashboard .shadow-lg,
+.gov-dashboard .shadow-xl { box-shadow: none; }
+
+.gov-dashboard [class*="bg-gradient"],
+.gov-dashboard [class*="from-"],
+.gov-dashboard [class*="via-"],
+.gov-dashboard [class*="to-"] { background-image: none !important; }
+
+.gov-dashboard button,
+.gov-dashboard a { transition-duration: 120ms; }
+.gov-dashboard button:hover,
+.gov-dashboard a:hover { filter: brightness(1.08); }
+
+.gov-dashboard .border-l-2 { border-left-width: 3px; border-left-color: var(--dashboard-white); }
+.gov-dashboard table { border-collapse: collapse; }
+.gov-dashboard table th { font-family: var(--font-sans); letter-spacing: 0.02em; color: var(--dashboard-muted); background: var(--dashboard-surface); }
+.gov-dashboard table tbody tr { border-color: var(--dashboard-border); }
+.gov-dashboard table tbody tr:hover { background-color: var(--dashboard-soft); }
+
+/* Keep charts monochrome as well. */
+.gov-dashboard .recharts-cartesian-axis-tick-value,
+.gov-dashboard .recharts-text,
+.gov-dashboard .recharts-legend-item-text { fill: var(--dashboard-white) !important; color: var(--dashboard-white) !important; }
+.gov-dashboard .recharts-cartesian-grid line { stroke: var(--dashboard-border) !important; }
+.gov-dashboard .recharts-line,
+.gov-dashboard .recharts-area,
+.gov-dashboard .recharts-bar-rectangle,
+.gov-dashboard .recharts-radial-bar-sector,
+.gov-dashboard .recharts-pie-sector { stroke: var(--dashboard-white) !important; fill: var(--dashboard-white) !important; }
+
+.gov-dashboard :focus-visible { outline: 2px solid var(--dashboard-white); outline-offset: 2px; }
