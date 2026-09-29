@@ -69,7 +69,7 @@ export function AgentStatus({
     if (onViewInvestigation) {
       onViewInvestigation();
     } else {
-      navigate({ to: "/dashboard/cases/FC-2026-00421" });
+      navigate({ to: "/dashboard/cases/$caseId", params: { caseId: "FC-2026-00421" } });
     }
   };
 

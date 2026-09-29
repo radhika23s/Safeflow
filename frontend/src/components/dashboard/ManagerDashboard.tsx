@@ -71,8 +71,8 @@ const generatePendingCases = (mockCases: Case[]): PendingCase[] => {
     .filter((c) => c.recommendation !== "ALLOW")
     .map((c, idx) => ({
       ...c,
-      investigator: investigators[idx % investigators.length],
-      approvalStatus: (["pending", "pending", "returned", "escalated"] as ApprovalStatus[])[idx % 4],
+      investigator: investigators[idx % investigators.length] || "Sarah Chen",
+      approvalStatus: (["pending", "pending", "returned", "escalated"] as ApprovalStatus[])[idx % 4] || "pending",
       daysWaiting: Math.floor(Math.random() * 7) + 1,
     }));
 };
@@ -202,7 +202,7 @@ export function ManagerDashboard({ userRole = "manager" }: ManagerDashboardProps
             label="Pending Reviews"
             value={pendingReviews}
             icon={<Clock className="size-4" />}
-            trend={pendingReviews > 0 ? { direction: "up", value: 3 } : undefined}
+            {...(pendingReviews > 0 ? { trend: { direction: "up" as const, value: 3 } } : {})}
           />
           <StatCard label="High Risk Cases" value={highRiskCases} icon={<AlertTriangle className="size-4" />} />
           <StatCard label="Escalations Queue" value={escalations} icon={<TrendingUp className="size-4" />} />
@@ -268,10 +268,10 @@ export function ManagerDashboard({ userRole = "manager" }: ManagerDashboardProps
                         <span
                           className={cn(
                             "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold border",
-                            getApprovalStatusBadge(currentStatus),
+                            getApprovalStatusBadge(caseActions[caseItem.id] || "pending"),
                           )}
                         >
-                          {getApprovalStatusLabel(currentStatus)}
+                          {                            getApprovalStatusLabel(caseActions[caseItem.id] || "pending")}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">

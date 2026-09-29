@@ -175,9 +175,9 @@ function BankSimulatorPage() {
         time,
         text,
         level,
-        ctaLink,
-        ctaLabel,
-        caseId,
+        ...(ctaLink !== undefined ? { ctaLink } : {}),
+        ...(ctaLabel !== undefined ? { ctaLabel } : {}),
+        ...(caseId !== undefined ? { caseId } : {}),
       },
     ]);
   }, []);
@@ -306,8 +306,8 @@ function BankSimulatorPage() {
             ? "FLAGGED_HIGH"
             : "SETTLED",
         riskScore: data.composite_risk_score,
-        caseId: data.case_id,
-        category: category,
+        ...(data.case_id != null ? { caseId: data.case_id as string } : {}),
+        ...(category != null ? { category } : {}),
       };
 
       setPassbook((prev) => [newEntry, ...prev.slice(0, 19)]);

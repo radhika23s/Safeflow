@@ -12,7 +12,7 @@ export const Route = createFileRoute("/dashboard/approvals")({
 const approvalItems = [
   {
     id: "FC-2026-00421",
-    title: demoCase.title,
+    title: demoCase.alert,
     investigator: "Marcus Johnson",
     risk: { level: "HIGH", score: 84 },
     recommendation: "ESCALATE",

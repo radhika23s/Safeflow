@@ -102,7 +102,7 @@ function InsiderAlertCard({ alert, onStatusChange }: { alert: InsiderAlert; onSt
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[11px] font-bold">{PATTERN_LABELS[alert.pattern_type] || alert.pattern_type}</span>
             <span className="rounded-full border border-current px-1.5 py-px text-[9px] font-bold uppercase">{alert.severity}</span>
-            <span className={cn("rounded px-1.5 py-px text-[9px] font-bold uppercase", STATUS_STYLES[status] || STATUS_STYLES.OPEN)}>{status}</span>
+            <span className={cn("rounded px-1.5 py-px text-[9px] font-bold uppercase", STATUS_STYLES[status] || STATUS_STYLES["OPEN"])}>{status}</span>
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {alert.employee_name ? `${alert.employee_name} · ${alert.designation} · ` : ""}
