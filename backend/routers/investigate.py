@@ -259,21 +259,18 @@ Investigation opened for transaction **{txn.get('transaction_id')}** involving a
 {patterns_bullet}
 
 ### 3. REGULATORY COMPLIANCE ASSESSMENT
-- **Statutory STR Reporting Obligation [PMLA_S12]**: Mandatory reporting of transactions displaying no lawful economic purpose or suspected of being structured to avoid thresholds to FIU-IND.
-- **Offence of Money Laundering & Structuring [PMLA_S3]**: Structuring and rapid dispersal of funds across multi-tier accounts triggers statutory anti-layering enforcement under Section 3.
-- **Enhanced Due Diligence Mandate [RBI_MD_KYC_2016_PARA_23]**: Disproportionate transactional velocity relative to customer profile mandates immediate Enhanced Due Diligence (EDD) and source verification.
-- **Strict 7-Day Statutory Filing Window [RBI_MD_KYC_2016_PARA_37]**: Obligation to transmit completed Suspicious Transaction Report to FIU-IND within 7 working days of established suspicion.
-- **Real-Time Fraud Containment [RBI_FRM_2024_CIRCULAR]**: Mandates immediate nodal account debit freeze and synchronized counterparty scrutiny across banking rails.
-- **Mule Account Mitigation Directives [NPCI_OC_138_MULE] [NPCI_UPI_2023_PARA_5]**: Alerts on rapid velocity mule dispersion mandate real-time beneficiary holds and automated NCRP alert transmission.
+- **Statutory STR Reporting Obligation — PMLA 2002 (Sec 12)**: Every reporting entity must maintain records of such transactions, verify client identity, and furnish information to FIU-IND; this transfer displays no lawful economic purpose and is suspected of being structured to defeat reporting thresholds.
+- **Fraud Risk Governance & Staff Accountability — RBI Master Direction (Fraud Risk Management 2024)**: Mandates early fraud detection systems, transaction monitoring, staff accountability for insider-assisted fraud, and prompt suspicious-transaction reporting to RBI.
+- **Mule Account & Velocity Containment — NPCI OC 138**: Operational circular mandating detection and containment of mule accounts, real-time velocity monitoring, and immediate transaction blocking across UPI rails.
 
 ### 4. RECOMMENDED ACTION & JUSTIFICATION
 **Recommendation**: **{action}**
-*Rationale*: High composite risk ({score}/100 Transaction Risk + {net_risk} Network Risk). Multi-hop analysis confirms coordinated fund movement necessitating immediate nodal intervention.
+*Rationale*: High composite risk ({score}/100 Transaction Risk + {net_risk} Network Risk). Per PMLA 2002 (Sec 12) and RBI Master Direction (Fraud Risk Management 2024), coordinated multi-hop fund movement necessitates immediate containment and regulatory filing.
 
 ### 5. ANALYST ACTION ITEMS
 1. Verify device fingerprint and IP geovelocity for account `{txn.get('sender_account')}`.
-2. Place a provisional lien/freeze on recipient `{txn.get('receiver_account')}` and associated downstream mule accounts [RBI_FRM_2024_CIRCULAR].
-3. Transmit draft STR package to Principal Officer for statutory FIU-IND submission within 7 days [PMLA_S12] [RBI_MD_KYC_2016_PARA_37].
+2. Place a provisional lien/freeze on recipient `{txn.get('receiver_account')}` and associated downstream mule accounts as directed by RBI Master Direction (Fraud Risk Management 2024) and NPCI OC 138.
+3. Transmit draft STR package to Principal Officer for statutory FIU-IND submission within the prescribed window under PMLA 2002 (Sec 12).
 """
 
 
