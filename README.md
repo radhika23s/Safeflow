@@ -4,14 +4,6 @@
 
 ![SafeFlow Banner](frontend/public/main_logo.png)
 
-**Real-time transaction surveillance, multi-agent AI investigation, and regulatory compliance platform engineered for modern commercial banks, payment gateways, and regulatory compliance teams.**
-
-[![Frontend Deployment](https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge&logo=vercel)](https://ledger-sigma-gules.vercel.app)
-[![Backend API](https://img.shields.io/badge/Backend-Render%20FastAPI-46E3B7?style=for-the-badge&logo=render)](https://smarthorizon.onrender.com)
-[![Swagger Docs](https://img.shields.io/badge/API%20Docs-Swagger-85EA2D?style=for-the-badge&logo=swagger)](https://smarthorizon.onrender.com/docs)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python)](https://python.org)
-[![TypeScript / React 19](https://img.shields.io/badge/TypeScript-React%2019-3178C6?style=for-the-badge&logo=typescript)](https://typescriptlang.org)
-[![RBI & PMLA Ready](https://img.shields.io/badge/Compliance-RBI%20%7C%20PMLA%20%7C%20FIU--IND-orange?style=for-the-badge)](https://rbi.org.in)
 
 </div>
 
