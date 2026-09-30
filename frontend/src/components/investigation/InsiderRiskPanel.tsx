@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { UserCog, ChevronDown, ChevronUp, Link2, Clock, Fingerprint, ShieldAlert, Gavel, CheckCircle2, Loader2 } from "lucide-react";
+import { UserCog, ChevronDown, ChevronUp, Link2, Clock, Fingerprint, ShieldAlert, Gavel, CheckCircle2, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { can } from "@/lib/permissions";
+import { useRole } from "@/context/RoleContext";
 import { insiderAlertAction, type AlertLifecycleResponse } from "@/lib/api";
 
 export interface InsiderEvidenceItem {
@@ -139,8 +141,32 @@ function AlertActions({
   const canEscalate = status === "OPEN" || status === "CLAIMED" || status === "ESCALATED";
   const canResolve = status === "CLAIMED" || status === "ESCALATED";
   const canReopen = status === "DISMISSED" || status === "RESOLVED";
+  const canDismiss = status === "OPEN" || status === "CLAIMED" || status === "ESCALATED";
 
-  if (!canClaim && !canEscalate && !canResolve && !canReopen) return null;
+  // RBAC: matrix in lib/permissions.ts, enforced by backend/routers/insider.py.
+  const { role } = useRole();
+  const mayClaim = can(role, "insider.claim");
+  const mayEscalate = can(role, "insider.escalate");
+  const mayResolve = can(role, "insider.resolve");
+  const mayReopen = can(role, "insider.reopen");
+  const mayDismiss = can(role, "insider.dismiss");
+  const isViewOnly = !mayClaim && !mayEscalate && !mayResolve && !mayReopen && !mayDismiss;
+
+  if (isViewOnly) {
+    return (
+      <div className="mt-2.5 rounded-lg border border-border/60 bg-background/60 p-2">
+        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <Gavel className="size-3" /> Reviewer Actions
+        </p>
+        <p className="mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Lock className="size-3 shrink-0" />
+          View-only (3rd Line): alert lifecycle actions belong to Investigators and Managers.
+        </p>
+      </div>
+    );
+  }
+
+  if (!canClaim && !canEscalate && !canResolve && !canReopen && !canDismiss) return null;
 
   return (
     <div className="mt-2.5 rounded-lg border border-border/60 bg-background/60 p-2">
@@ -148,7 +174,7 @@ function AlertActions({
         <Gavel className="size-3" /> Reviewer Actions
       </p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {canClaim && status === "OPEN" && (
+        {canClaim && status === "OPEN" && mayClaim && (
           <button
             type="button"
             disabled={busy !== null}
@@ -158,7 +184,7 @@ function AlertActions({
             {busy === "CLAIM" ? <Loader2 className="size-3 animate-spin" /> : "Claim"}
           </button>
         )}
-        {canEscalate && (
+        {canEscalate && mayEscalate && (
           <button
             type="button"
             disabled={busy !== null}
@@ -168,7 +194,7 @@ function AlertActions({
             {busy === "ESCALATE" ? <Loader2 className="size-3 animate-spin" /> : "Escalate"}
           </button>
         )}
-        {canResolve && (
+        {canResolve && mayResolve && (
           <button
             type="button"
             disabled={busy !== null}
@@ -179,7 +205,7 @@ function AlertActions({
             Resolve (Manager)
           </button>
         )}
-        {canReopen && (
+        {canReopen && mayReopen && (
           <button
             type="button"
             disabled={busy !== null}
@@ -187,6 +213,16 @@ function AlertActions({
             className="rounded-lg border border-amber-500/40 px-2 py-1 text-[10px] font-semibold text-amber-400 transition-colors hover:bg-amber-500/10 disabled:opacity-50"
           >
             Reopen (Manager)
+          </button>
+        )}
+        {canDismiss && mayDismiss && (
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => onAct("DISMISS")}
+            className="rounded-lg border border-muted-foreground/40 px-2 py-1 text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-muted/40 disabled:opacity-50"
+          >
+            Dismiss (Manager)
           </button>
         )}
       </div>

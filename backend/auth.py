@@ -35,6 +35,67 @@ _USERS = {
     "alex.chen@smarthorizon.ai": ("Alex Chen", "administrator"),
 }
 
+# ============================================================================
+# Role-Based Access Control (RBAC) — Three Lines of Defense
+# ============================================================================
+# A single source of truth for what each role may DO. Higher roles only inherit
+# a permission when it is listed in their explicit allow-list — this keeps
+# "administrator = audit & governance" from silently becoming a case decision
+# maker, which would break the maker-checker separation.
+#
+#   investigator  (1st Line) — detection, triage, evidence
+#   manager       (2nd Line) — independent review, sign-off, blocking
+#   administrator (3rd Line) — governance, user admin, audit — no case verdicts
+# ============================================================================
+
+ROLE_PERMISSIONS: dict[str, set[str]] = {
+    "investigator": {
+        "case.view", "case.decide_flag", "case.decide_dismiss", "case.decide_escalate",
+        "insider.claim", "insider.escalate",
+        "reports.view", "reports.draft",
+        "audit.view_self",
+    },
+    "manager": {
+        "case.view", "case.decide_flag", "case.decide_dismiss", "case.decide_escalate",
+        "case.decide_block",           # sole authority to freeze accounts (2nd Line)
+        "case.update",                 # edit investigation report / STR draft
+        "insider.claim", "insider.escalate", "insider.dismiss", "insider.resolve", "insider.reopen",
+        "users.view",
+        "reports.view", "reports.draft", "reports.submit",
+        "audit.view_self", "audit.view_all",
+    },
+    "administrator": {
+        "case.view",                   # view-only: zero case-decision authority
+        "insider.view",
+        "users.view", "users.create", "users.status",
+        "reports.view",
+        "audit.view_self", "audit.view_all",
+        "settings.manage",
+    },
+}
+
+
+def permissions_for(role: str) -> set[str]:
+    return ROLE_PERMISSIONS.get(role, set())
+
+
+def has_permission(role: str, permission: str) -> bool:
+    return permission in permissions_for(role)
+
+
+def require_permissions(*needed: str):
+    """Dependency factory: allow only if the user's role holds every permission."""
+    def dependency(user: CurrentUser = Depends(current_user)) -> CurrentUser:
+        role_perms = permissions_for(user.role)
+        missing = [p for p in needed if p not in role_perms]
+        if missing:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                f"Your role '{user.role}' lacks permission(s): {', '.join(missing)}",
+            )
+        return user
+    return dependency
+
 
 @dataclass(frozen=True)
 class CurrentUser:

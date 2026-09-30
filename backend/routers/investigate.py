@@ -43,11 +43,15 @@ router = APIRouter(dependencies=[Depends(current_user)])
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 _gemini_client = None
-if GEMINI_API_KEY:
+if GEMINI_API_KEY and GEMINI_API_KEY not in ("", "your-gemini-api-key-here"):
     try:
         _gemini_client = google_genai.Client(api_key=GEMINI_API_KEY)
+        print(f"[GEMINI] reasonAgent online (model: gemini-3.6-flash, key: ...{GEMINI_API_KEY[-4:]})")
     except Exception as e:
         print(f"[GEMINI INIT ERROR] {e}")
+else:
+    print("[GEMINI] No GEMINI_API_KEY found — reasonAgent will use the deterministic regulatory fallback engine. "
+          "Copy backend/.env.example to backend/.env and set your key.")
 
 
 class InvestigateRequest(BaseModel):

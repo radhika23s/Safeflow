@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckSquare, CheckCircle2, RotateCcw, ArrowUpRight, Clock } from "lucide-react";
+import { CheckSquare, CheckCircle2, RotateCcw, ArrowUpRight, Clock, ShieldAlert } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { demoCase } from "@/data/mock-investigation";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/context/RoleContext";
+import { can } from "@/lib/permissions";
 
 export const Route = createFileRoute("/dashboard/approvals")({
   component: ApprovalsPage,
@@ -37,6 +39,28 @@ const approvalItems = [
 ];
 
 function ApprovalsPage() {
+  const { role, loginWithRole } = useRole();
+
+  // RBAC: approvals are a 2nd-Line checker function (manager sign-off authority).
+  if (!can(role, "case.decide_block")) {
+    return (
+      <DashboardLayout title="Manager Approvals Queue">
+        <div className="rounded-2xl border border-risk-high/30 bg-risk-high/10 p-8 text-center max-w-lg mx-auto mt-12">
+          <ShieldAlert className="size-12 text-risk-high mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-foreground">Manager Sign-Off Area</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Approval queues contain 2nd-Line checker actions (account blocking, sign-off) that require the Manager role.
+          </p>
+          {role === "investigator" && (
+            <Button size="sm" variant="outline" className="mt-4 gap-1.5" onClick={() => loginWithRole("manager")}>
+              Switch to Manager (Sarah Chen) →
+            </Button>
+          )}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Manager Approvals Queue">
       <div className="space-y-6">

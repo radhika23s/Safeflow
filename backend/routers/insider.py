@@ -19,7 +19,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from database import get_db, log_audit
-from auth import current_user, CurrentUser, require_roles
+from auth import current_user, CurrentUser, require_roles, has_permission
 
 router = APIRouter(dependencies=[Depends(current_user)])
 
@@ -30,6 +30,17 @@ _ROLE_LEVEL = {"investigator": 1, "manager": 2, "administrator": 3}
 def _require_min_role(user: CurrentUser, min_role: str) -> CurrentUser:
     if _ROLE_LEVEL.get(user.role, 0) < _ROLE_LEVEL.get(min_role, 99):
         raise HTTPException(403, f"Requires {min_role} role or higher (current: {user.role})")
+    return user
+
+
+def _require_permission(user: CurrentUser, permission: str) -> CurrentUser:
+    """RBAC matrix check (auth.py) — administrators hold no lifecycle powers."""
+    if not has_permission(user.role, permission):
+        raise HTTPException(
+            403,
+            f"Your role '{user.role}' lacks insider-alert permission '{permission}'. "
+            "Administrators are view-only (3rd Line governance).",
+        )
     return user
 
 # Alert lifecycle transitions (mirrors case statuses for reviewer familiarity)
@@ -231,6 +242,7 @@ async def alert_action(
 
     from_statuses, to_status, audit_action, min_role = cfg
     user = _require_min_role(user, min_role)
+    user = _require_permission(user, f"insider.{action.lower()}")
 
     row = conn.execute("SELECT * FROM insider_alerts WHERE alert_id = ?", (alert_id,)).fetchone()
     if not row:

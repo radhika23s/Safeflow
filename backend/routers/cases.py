@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 
 from database import get_db, log_audit, init_db
-from auth import CurrentUser, current_user, require_roles
+from auth import CurrentUser, current_user, require_roles, require_permissions, has_permission
 from regulatory import REGULATORY_CLAUSES, extract_cited_clauses
 from counterfactual import generate_counterfactual
 from state import app_state
@@ -39,6 +39,16 @@ class CaseCreate(BaseModel):
 class CaseDecision(BaseModel):
     decision: str  # APPROVE_BLOCK | APPROVE_FLAG | DISMISS | ESCALATE
     notes: Optional[str] = ""
+
+
+# Permission required for each decision — mirrors the Three-Lines-of-Defense RBAC
+# matrix defined in auth.py (single source of truth).
+_DECISION_PERMISSION = {
+    "APPROVE_BLOCK": "case.decide_block",
+    "APPROVE_FLAG": "case.decide_flag",
+    "DISMISS": "case.decide_dismiss",
+    "ESCALATE": "case.decide_escalate",
+}
 
 
 class CaseUpdate(BaseModel):
@@ -245,12 +255,44 @@ async def submit_decision(
     """
     Analyst submits a decision on a case.
     analyst_id is derived from the authenticated user — never accepted from client input.
+
+    RBAC (Three Lines of Defense, matrix in auth.py):
+      - investigator : FLAG / DISMISS / ESCALATE only — no account freezing (maker)
+      - manager      : full sign-off authority incl. APPROVE_BLOCK (checker)
+      - administrator: view/audit only — decision attempts are rejected and audited
     """
-    if user.role == "investigator" and body.decision not in ("ESCALATE", "DISMISS", "APPROVE_FLAG"):
-        raise HTTPException(
-            403,
-            "Three Lines of Defense & RBI Maker-Checker Policy: AML Investigators (1st Line) can triage, flag, or dismiss false positives. Account freezing (Block & Report) requires independent Manager authorization (2nd Line).",
-        )
+    decision = (body.decision or "").strip().upper()
+    required_perm = _DECISION_PERMISSION.get(decision)
+
+    if required_perm is None:
+        raise HTTPException(400, f"Invalid decision '{body.decision}'. Must be one of: {sorted(_DECISION_PERMISSION)}")
+
+    # ── RBAC gate: reject before existence check so unauthorized roles can't
+    # probe which case IDs exist. Matrix lives in auth.py (single source of truth).
+    if not has_permission(user.role, required_perm):
+        if user.role == "administrator":
+            detail = (
+                "Administrator (3rd Line) has zero case-decision authority — independent "
+                "governance requires separation from case verdicts. Decisions belong to "
+                "Investigators (1st Line) and Managers (2nd Line)."
+            )
+        elif decision == "APPROVE_BLOCK":
+            detail = (
+                "RBI Maker-Checker Policy: Account freezing (Block & Report) requires "
+                "independent Manager authorization (2nd Line). Investigators (1st Line) "
+                "may Flag, Dismiss false positives, or Escalate."
+            )
+        else:
+            detail = f"Your role '{user.role}' is not authorized to submit decision '{decision}'."
+        clean_id = case_id.strip().replace(" ", "-")
+        existing = conn.execute(
+            "SELECT case_id FROM cases WHERE case_id = ? OR case_id = ?", (case_id, clean_id)
+        ).fetchone()
+        if existing:
+            log_audit(conn, existing["case_id"], "DECISION_DENIED", actor=user.email,
+                      details=f"role={user.role}, attempted={decision}, reason=insufficient_permission")
+            conn.commit()
+        raise HTTPException(403, detail)
 
     clean_id = case_id.strip().replace(" ", "-")
     case = conn.execute(
@@ -261,17 +303,13 @@ async def submit_decision(
 
     actual_case_id = dict(case)["case_id"]
 
-    valid_decisions = {"APPROVE_BLOCK", "APPROVE_FLAG", "DISMISS", "ESCALATE"}
-    if body.decision not in valid_decisions:
-        raise HTTPException(400, f"Invalid decision. Must be one of: {valid_decisions}")
-
     now = datetime.utcnow().isoformat()
     status = {
         "APPROVE_BLOCK": "CLOSED",
         "APPROVE_FLAG": "MONITORING",
         "DISMISS": "CLOSED",
         "ESCALATE": "ESCALATED",
-    }[body.decision]
+    }[decision]
 
     conn.execute(
         """UPDATE cases
@@ -279,7 +317,7 @@ async def submit_decision(
             status=?, updated_at=?, closed_at=?
         WHERE case_id=?""",
         (
-            user.email, body.decision, body.notes,
+            user.email, decision, body.notes,
             status, now, now if status == "CLOSED" else None,
             actual_case_id,
         ),
@@ -288,13 +326,14 @@ async def submit_decision(
 
     log_audit(conn, actual_case_id, "ANALYST_DECISION",
               actor=user.email,
-              details=f"decision={body.decision}, notes={body.notes}")
+              details=f"decision={decision}, role={user.role}, notes={body.notes}")
 
     return {
         "case_id": actual_case_id,
-        "decision": body.decision,
+        "decision": decision,
         "status": status,
         "decided_at": now,
+        "role": user.role,
     }
 
 
@@ -302,7 +341,7 @@ async def submit_decision(
 async def update_case(
     case_id: str,
     body: CaseUpdate,
-    user: CurrentUser = Depends(require_roles("manager", "administrator")),
+    user: CurrentUser = Depends(require_permissions("case.update")),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     """Update case fields (report, STR draft, status). Uses `is not None` to allow clearing fields."""

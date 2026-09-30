@@ -11,7 +11,7 @@
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: MONGO_URI
-        sync: false
+        value: mongodb+srv://######:dbmongo@cluster0.iwjg1gh.mongodb.net/banking_system?retryWrites=true&w=majority
       - key: SECRET_KEY
         generateValue: true
       - key: GEMINI_API_KEY

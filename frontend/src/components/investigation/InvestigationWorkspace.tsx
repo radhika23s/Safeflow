@@ -23,6 +23,7 @@ import {
 import { AgentStatus, type InvestigationAgentProgress } from "@/components/dashboard/AgentStatus";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { can, type Permission } from "@/lib/permissions";
 import type { Agent, Case, GraphEdge, GraphNode, InvestigationReport, RegulatorySource, FreezePriorityItem, PrivacyAuditInfo } from "@/types/investigation";
 import type { BackendCase } from "@/lib/api";
 import { useRole } from "@/context/RoleContext";
@@ -107,6 +108,14 @@ export function InvestigationWorkspace({
   const { role, loginWithRole } = useRole();
   const [localDecision, setLocalDecision] = useState<string | null>(null);
   const [copiedStr, setCopiedStr] = useState(false);
+
+  // RBAC: which decision buttons does this role hold? (matrix in lib/permissions.ts,
+  // enforced server-side in backend/routers/cases.py — UI only hides what's forbidden)
+  const canBlock = can(role, "case.decide_block");
+  const canFlag = can(role, "case.decide_flag");
+  const canDismiss = can(role, "case.decide_dismiss");
+  const canEscalate = can(role, "case.decide_escalate");
+  const hasAnyDecisionPower = canBlock || canFlag || canDismiss || canEscalate;
 
   const supporting = caseData.evidence.filter((item) => item.kind === "supporting");
   const counter = caseData.evidence.filter((item) => item.kind === "counter");
@@ -687,70 +696,85 @@ export function InvestigationWorkspace({
                 <Button
                   type="button"
                   variant={localDecision === "Block" ? "destructive" : "outline"}
-                  disabled={isSubmittingDecision || !recommendationReasoning || role === "investigator"}
+                  disabled={isSubmittingDecision || !recommendationReasoning || !canBlock}
                   onClick={() => handleDecisionClick("Block", "APPROVE_BLOCK")}
                   className={cn(
                     "gap-1.5 text-xs border-risk-high/30 text-risk-high",
-                    recommendationReasoning && role !== "investigator"
+                    recommendationReasoning && canBlock
                       ? "hover:bg-risk-high/10"
                       : "opacity-40 cursor-not-allowed"
                   )}
-                  title={role === "investigator" ? "Requires manager sign-off" : undefined}
+                  title={
+                    !canBlock
+                      ? role === "administrator"
+                        ? "Administrator is view-only (3rd Line) — no case decisions"
+                        : "Requires manager sign-off (2nd Line)"
+                      : undefined
+                  }
                 >
                   <ShieldAlert className="size-4" />
                   Block & Report
-                  {role === "investigator" && <Lock className="size-3 ml-1" />}
+                  {!canBlock && <Lock className="size-3 ml-1" />}
                 </Button>
                 <Button
                   type="button"
                   variant={localDecision === "Flag" ? "secondary" : "outline"}
-                  disabled={isSubmittingDecision || !recommendationReasoning}
+                  disabled={isSubmittingDecision || !recommendationReasoning || !canFlag}
                   onClick={() => handleDecisionClick("Flag", "APPROVE_FLAG")}
                   className={cn(
                     "gap-1.5 text-xs border-amber-500/30 text-amber-400",
-                    recommendationReasoning ? "hover:bg-amber-500/10" : "opacity-50 cursor-not-allowed"
+                    recommendationReasoning && canFlag ? "hover:bg-amber-500/10" : "opacity-50 cursor-not-allowed"
                   )}
+                  title={!canFlag ? "Administrator is view-only (3rd Line) — no case decisions" : undefined}
                 >
                   <ClipboardCheck className="size-4" />
                   Flag for Monitoring
+                  {!canFlag && <Lock className="size-3 ml-1" />}
                 </Button>
                 <Button
                   type="button"
                   variant={localDecision === "Dismiss" ? "default" : "outline"}
-                  disabled={isSubmittingDecision || !recommendationReasoning}
+                  disabled={isSubmittingDecision || !recommendationReasoning || !canDismiss}
                   onClick={() => handleDecisionClick("Dismiss", "DISMISS")}
                   className={cn(
                     "gap-1.5 text-xs border-risk-low/30 text-risk-low",
-                    recommendationReasoning
+                    recommendationReasoning && canDismiss
                       ? "hover:bg-risk-low/10"
                       : "opacity-40 cursor-not-allowed"
                   )}
-                  title="Dismiss case if verified benign or false positive"
+                  title={
+                    !canDismiss
+                      ? "Administrator is view-only (3rd Line) — no case decisions"
+                      : "Dismiss case if verified benign or false positive"
+                  }
                 >
                   <ShieldCheck className="size-4" />
                   Dismiss Case
+                  {!canDismiss && <Lock className="size-3 ml-1" />}
                 </Button>
                 <Button
                   type="button"
                   variant="default"
-                  disabled={isSubmittingDecision || !recommendationReasoning}
+                  disabled={isSubmittingDecision || !recommendationReasoning || !canEscalate}
                   onClick={() => handleDecisionClick("Escalate", "ESCALATE")}
                   className={cn(
                     "gap-1.5 text-xs bg-violet text-white hover:bg-violet/90 ring-1 ring-violet/50 font-bold",
-                    !recommendationReasoning && "opacity-50 cursor-not-allowed"
+                    (!recommendationReasoning || !canEscalate) && "opacity-50 cursor-not-allowed"
                   )}
+                  title={!canEscalate ? "Administrator is view-only (3rd Line) — no case decisions" : undefined}
                 >
                   <ArrowUpRight className="size-4" />
-                  Escalate to Manager
+                  {role === "manager" ? "Escalate to Committee" : "Escalate to Manager"}
+                  {!canEscalate && <Lock className="size-3 ml-1" />}
                 </Button>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground font-mono">
                 <span>
                   {role === "investigator"
-                    ? "• Mode: Investigator (1st Line) — Can Dismiss false positives or Escalate. Account Blocking requires Manager sign-off."
+                    ? "• Mode: Investigator (1st Line) — Can Flag, Dismiss false positives, or Escalate. Account Blocking requires Manager sign-off."
                     : role === "manager"
                     ? "• Mode: Manager (2nd Line Checker) — Signatory authority & Account Blocking active."
-                    : "• Mode: Administrator (System Admin) — Full audit & override view."}
+                    : "• Mode: Administrator (3rd Line) — View & audit only. Zero case-decision authority by design."}
                 </span>
                 {role === "investigator" && (
                   <button
@@ -768,6 +792,15 @@ export function InvestigationWorkspace({
                     className="text-muted-foreground hover:text-foreground underline transition-colors cursor-pointer"
                   >
                     Switch back to Investigator
+                  </button>
+                )}
+                {role === "administrator" && (
+                  <button
+                    type="button"
+                    onClick={() => loginWithRole("manager")}
+                    className="text-violet hover:text-violet/80 underline font-semibold transition-colors cursor-pointer"
+                  >
+                    Switch to Manager (Sarah Chen) to decide →
                   </button>
                 )}
               </div>

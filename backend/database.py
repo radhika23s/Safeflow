@@ -102,6 +102,9 @@ def init_db():
     """)
 
     # ── Audit Log (immutable — append-only) ────────────────────────────────────
+    # NOTE: no FK on case_id — audit entries also record system-level events
+    # (USER_CREATED, DECISION_DENIED on unknown IDs, INSIDER-UNASSIGNED, …)
+    # that must never crash the write path.
     c.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
             log_id      INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,10 +112,34 @@ def init_db():
             action      TEXT NOT NULL,
             actor       TEXT NOT NULL DEFAULT 'SYSTEM',
             details     TEXT DEFAULT '',
-            timestamp   TEXT NOT NULL,
-            FOREIGN KEY (case_id) REFERENCES cases(case_id)
+            timestamp   TEXT NOT NULL
         )
     """)
+
+    # Migration: drop the legacy FK constraint if the table was created by an
+    # older build that declared FOREIGN KEY (case_id) REFERENCES cases(case_id).
+    c.row_factory = sqlite3.Row
+    fk_row = c.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='audit_log'"
+    ).fetchone()
+    fk_sql = fk_row[0] if fk_row else None
+    if fk_sql and "FOREIGN KEY" in fk_sql:
+        c.execute("ALTER TABLE audit_log RENAME TO audit_log_legacy_fk")
+        c.execute("""
+            CREATE TABLE audit_log (
+                log_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                case_id     TEXT NOT NULL,
+                action      TEXT NOT NULL,
+                actor       TEXT NOT NULL DEFAULT 'SYSTEM',
+                details     TEXT DEFAULT '',
+                timestamp   TEXT NOT NULL
+            )
+        """)
+        c.execute("""
+            INSERT INTO audit_log (case_id, action, actor, details, timestamp)
+            SELECT case_id, action, actor, details, timestamp FROM audit_log_legacy_fk
+        """)
+        c.execute("DROP TABLE audit_log_legacy_fk")
 
     # ── Users (Role-based authentication & directory) ───────────────────────────
     c.execute("""
